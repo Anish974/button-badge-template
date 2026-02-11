@@ -270,6 +270,9 @@ const BadgeEditor: React.FC = () => {
 
     const outerMm = badgeSize.outerMm;
     const innerMm = badgeSize.innerMm;
+    // Scale Word images proportionally to actual mm size (70mm → 265px baseline)
+    const fullImgSize = Math.round(265 * (outerMm / 70));
+    const innerImgSize = Math.round(220 * (innerMm / 58));
 
     const doc = new Document({
       sections: [
@@ -285,7 +288,7 @@ const BadgeEditor: React.FC = () => {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new ImageRun({ data: new Uint8Array(fullBuf), transformation: { width: 265, height: 265 }, type: "png" }),
+                new ImageRun({ data: new Uint8Array(fullBuf), transformation: { width: fullImgSize, height: fullImgSize }, type: "png" }),
               ],
             }),
             new Paragraph({
@@ -307,7 +310,7 @@ const BadgeEditor: React.FC = () => {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               children: [
-                new ImageRun({ data: new Uint8Array(innerBuf), transformation: { width: 220, height: 220 }, type: "png" }),
+                new ImageRun({ data: new Uint8Array(innerBuf), transformation: { width: innerImgSize, height: innerImgSize }, type: "png" }),
               ],
             }),
             new Paragraph({
