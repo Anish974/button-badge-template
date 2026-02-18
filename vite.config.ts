@@ -18,4 +18,16 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    // Increase chunk size warning limit for large deps
+    chunkSizeWarningLimit: 2000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Isolate the heavy bg-removal lib into its own chunk
+          "bg-removal": ["@imgly/background-removal"],
+        },
+      },
+    },
+  },
 }));

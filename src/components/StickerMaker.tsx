@@ -1,5 +1,4 @@
 import React, { useRef, useState, useCallback, useEffect } from "react";
-import { removeBackground } from "@imgly/background-removal";
 
 type Step = "upload" | "processing" | "edit" | "download";
 
@@ -53,15 +52,45 @@ const StickerMaker: React.FC = () => {
     const runRemoval = async () => {
       try {
         setProgress(0);
+
+        // Dynamically import the heavy bg-removal library (code-split)
+        const { removeBackground } = await import("@imgly/background-removal");
+
+        // Track progress across multiple phases
+        const phaseWeights: Record<string, number> = {
+          "fetch:model": 0.5,           // model download is ~50% of wait
+          "compute:inference": 0.4,     // inference ~40%
+          "fetch:wasm": 0.05,
+          "compute:postprocess": 0.05,
+        };
+        const phaseDone: Record<string, number> = {};
+
         const blob = await removeBackground(originalFile, {
           progress: (key: string, current: number, total: number) => {
-            if (!cancelled) {
-              const pct = total > 0 ? Math.round((current / total) * 100) : 0;
-              setProgress(pct);
+            if (cancelled) return;
+            const ratio = total > 0 ? current / total : 0;
+
+            // Find matching phase weight
+            let weight = 0.05; // default small weight for unknown phases
+            for (const [phase, w] of Object.entries(phaseWeights)) {
+              if (key.includes(phase) || key.startsWith(phase.split(":")[0])) {
+                weight = w;
+                break;
+              }
             }
+            phaseDone[key] = ratio * weight;
+
+            const totalPct = Math.min(
+              95,
+              Math.round(
+                Object.values(phaseDone).reduce((a, b) => a + b, 0) * 100
+              )
+            );
+            setProgress(Math.max(totalPct, 5));
           },
         });
         if (cancelled) return;
+        setProgress(100);
         setRemovedBgBlob(blob);
 
         const img = new Image();
@@ -363,12 +392,16 @@ const StickerMaker: React.FC = () => {
           </div>
           <p className="text-base font-semibold text-foreground">Removing background...</p>
           <p className="text-sm text-muted-foreground mt-1">
-            This may take a moment — AI is processing your image locally
+            {progress < 50
+              ? "Loading AI model..."
+              : progress < 90
+              ? "Processing your image..."
+              : "Almost done..."}
           </p>
-          <div className="w-64 mt-4 bg-muted rounded-full h-2 overflow-hidden">
+          <div className="w-72 mt-4 bg-muted rounded-full h-2.5 overflow-hidden">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-300"
-              style={{ width: `${Math.max(progress, 5)}%` }}
+              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+              style={{ width: `${progress}%` }}
             />
           </div>
           <p className="text-xs text-muted-foreground mt-2 font-mono">{progress}%</p>
