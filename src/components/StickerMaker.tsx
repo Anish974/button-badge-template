@@ -281,21 +281,22 @@ const StickerMaker: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <div className="mx-auto max-w-5xl px-4 py-6">
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Custom Sticker Maker</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Upload an image, remove the background with AI, add a border, and download your sticker.
+        <h1 className="text-lg font-extrabold text-foreground tracking-tight">Sticker Maker</h1>
+        <p className="text-xs text-muted-foreground mt-1">
+          Upload · Remove background with AI · Add border · Download
         </p>
       </div>
 
-      {/* Step indicator */}
-      <div className="flex items-center gap-2 mb-8">
+      {/* Steps */}
+      <div className="flex items-center gap-1.5 mb-6">
         {[
-          { key: "upload", label: "1. Upload" },
-          { key: "processing", label: "2. Remove BG" },
-          { key: "edit", label: "3. Edit" },
-          { key: "download", label: "4. Download" },
+          { key: "upload", label: "Upload" },
+          { key: "processing", label: "Remove BG" },
+          { key: "edit", label: "Edit" },
+          { key: "download", label: "Download" },
         ].map((s, i) => {
           const isActive = s.key === step;
           const isDone =
@@ -305,23 +306,19 @@ const StickerMaker: React.FC = () => {
           return (
             <React.Fragment key={s.key}>
               {i > 0 && (
-                <div
-                  className={`flex-1 h-0.5 ${
-                    isDone ? "bg-primary" : "bg-border"
-                  }`}
-                />
+                <div className={`flex-1 h-px ${isDone ? "bg-primary" : "bg-border"}`} />
               )}
               <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-[11px] font-semibold transition-all duration-200 ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-md"
+                    ? "bg-primary text-primary-foreground shadow-sm"
                     : isDone
-                    ? "bg-primary/20 text-primary"
+                    ? "bg-primary/10 text-primary"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
                 {isDone && (
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -333,38 +330,38 @@ const StickerMaker: React.FC = () => {
       </div>
 
       {error && (
-        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+        <div className="mb-5 rounded-xl border border-destructive/30 bg-destructive/5 p-3.5 text-sm text-destructive flex items-center gap-2.5">
+          <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
           {error}
         </div>
       )}
 
-      {/* STEP: Upload */}
       {step === "upload" && (
         <div
-          className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-16 cursor-pointer transition-colors hover:border-primary hover:bg-muted/50"
+          className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card p-12 cursor-pointer transition-all duration-300 hover:border-primary/40 hover:bg-primary/[0.03] card-hover"
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
           onClick={() => fileInputRef.current?.click()}
         >
-          <svg
-            className="mb-4 h-16 w-16 text-muted-foreground"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
-            />
-          </svg>
-          <p className="text-base font-semibold text-foreground">
-            Drop an image here or click to upload
-          </p>
-          <p className="mt-2 text-sm text-muted-foreground">
-            JPG, PNG supported — AI will remove the background
-          </p>
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
+            <svg
+              className="h-7 w-7 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+              />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-foreground">Drop an image or click to upload</p>
+          <p className="mt-1 text-xs text-muted-foreground">JPG, PNG — AI will remove the background</p>
           <input
             ref={fileInputRef}
             type="file"
@@ -375,140 +372,91 @@ const StickerMaker: React.FC = () => {
         </div>
       )}
 
-      {/* STEP: Processing */}
+      {/* Processing */}
       {step === "processing" && (
-        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-16">
+        <div className="flex flex-col items-center justify-center rounded-2xl border bg-card p-14">
           <div className="relative mb-6">
             {originalImage && (
-              <img
-                src={originalImage.src}
-                alt="Original"
-                className="w-48 h-48 object-cover rounded-lg opacity-60"
-              />
+              <img src={originalImage.src} alt="Original" className="w-44 h-44 object-cover rounded-2xl opacity-40 blur-[2px]" />
             )}
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+              <div className="animate-spin rounded-full h-10 w-10 border-[3px] border-primary border-t-transparent" />
             </div>
           </div>
-          <p className="text-base font-semibold text-foreground">Removing background...</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            {progress < 50
-              ? "Loading AI model..."
-              : progress < 90
-              ? "Processing your image..."
-              : "Almost done..."}
+          <p className="text-base font-bold text-foreground">Removing background...</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            {progress < 50 ? "Loading AI model..." : progress < 90 ? "Processing image..." : "Almost done..."}
           </p>
-          <div className="w-72 mt-4 bg-muted rounded-full h-2.5 overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
-              style={{ width: `${progress}%` }}
-            />
+          <div className="w-64 mt-4 bg-muted rounded-full h-2 overflow-hidden">
+            <div className="h-full bg-primary rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%` }} />
           </div>
-          <p className="text-xs text-muted-foreground mt-2 font-mono">{progress}%</p>
+          <p className="text-[11px] text-muted-foreground mt-2 font-mono tabular-nums">{progress}%</p>
         </div>
       )}
 
-      {/* STEP: Edit */}
+      {/* Edit */}
       {(step === "edit" || step === "download") && processedImage && (
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Canvas Preview */}
-          <div className="flex-1 w-full">
-            <div className="rounded-lg border border-accent/20 bg-card p-4 flex flex-col items-center">
-              <p className="mb-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">
-                Sticker Preview
-              </p>
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          <div className="flex-1 w-full space-y-4">
+            <div className="rounded-2xl border bg-card p-4 flex flex-col items-center">
+              <p className="mb-3 section-label">Sticker Preview</p>
               <canvas
                 ref={canvasRef}
                 width={CANVAS_SIZE}
                 height={CANVAS_SIZE}
-                className="max-w-full rounded"
+                className="max-w-full rounded-xl"
                 style={{ aspectRatio: "1/1", width: "100%", maxWidth: CANVAS_SIZE }}
               />
             </div>
 
             {/* Border Controls */}
-            <div className="mt-4 rounded-lg border border-tool-border bg-card p-4 space-y-4">
+            <div className="rounded-2xl border bg-card p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-                  White Border
-                </label>
+                <label className="input-label">Border</label>
                 <button
                   onClick={() => setBorderEnabled(!borderEnabled)}
-                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                  className={`relative w-10 h-[22px] rounded-full transition-colors duration-200 ${
                     borderEnabled ? "bg-primary" : "bg-muted"
                   }`}
                 >
-                  <span
-                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
-                      borderEnabled ? "translate-x-5" : ""
-                    }`}
-                  />
+                  <span className={`absolute top-[2px] left-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${borderEnabled ? "translate-x-[18px]" : ""}`} />
                 </button>
               </div>
 
               {borderEnabled && (
                 <>
                   <div className="flex items-center gap-4">
-                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider w-20">
-                      Thickness
-                    </label>
-                    <input
-                      type="range"
-                      min={BORDER_MIN}
-                      max={BORDER_MAX}
-                      step={1}
-                      value={borderWidth}
-                      onChange={(e) => setBorderWidth(parseInt(e.target.value))}
-                      className="flex-1 accent-primary"
-                    />
-                    <span className="text-xs font-mono text-foreground w-12 text-right">
-                      {borderWidth}px
-                    </span>
+                    <label className="input-label w-16">Thickness</label>
+                    <input type="range" min={BORDER_MIN} max={BORDER_MAX} step={1} value={borderWidth} onChange={(e) => setBorderWidth(parseInt(e.target.value))} className="flex-1" />
+                    <span className="bg-muted px-2 py-1 rounded-md text-xs font-mono font-semibold text-foreground min-w-[42px] text-center">{borderWidth}px</span>
                   </div>
                   <div className="flex items-center gap-4">
-                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider w-20">
-                      Color
-                    </label>
-                    <div className="flex items-center gap-2">
+                    <label className="input-label w-16">Color</label>
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       {["#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff", "#ffff00"].map(
                         (color) => (
                           <button
                             key={color}
                             onClick={() => setBorderColor(color)}
-                            className={`w-7 h-7 rounded-full border-2 transition-all ${
+                            className={`w-7 h-7 rounded-lg border-2 transition-all duration-150 ${
                               borderColor === color
-                                ? "border-primary scale-110 ring-2 ring-primary/30"
+                                ? "border-primary scale-110 ring-2 ring-primary/25"
                                 : "border-border hover:border-muted-foreground"
                             }`}
                             style={{ backgroundColor: color }}
                           />
                         )
                       )}
-                      <input
-                        type="color"
-                        value={borderColor}
-                        onChange={(e) => setBorderColor(e.target.value)}
-                        className="w-7 h-7 rounded cursor-pointer border border-border"
-                      />
+                      <input type="color" value={borderColor} onChange={(e) => setBorderColor(e.target.value)} className="w-7 h-7 rounded-lg cursor-pointer border border-border" />
                     </div>
                   </div>
                 </>
               )}
             </div>
 
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={reset}
-                className="rounded bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
-              >
-                Start Over
-              </button>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
-              >
-                Try Another Image
-              </button>
+            <div className="flex gap-2">
+              <button onClick={reset} className="btn-ghost">Start Over</button>
+              <button onClick={() => fileInputRef.current?.click()} className="btn-ghost">Try Another</button>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -524,72 +472,38 @@ const StickerMaker: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Download panel */}
+          {/* Right panel */}
           <div className="w-full lg:w-72 space-y-4">
-            {/* Original vs Processed */}
-            <div className="rounded-lg border border-tool-border bg-card p-4">
-              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
-                Before & After
-              </p>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl border bg-card p-4">
+              <p className="section-label mb-3">Before & After</p>
+              <div className="grid grid-cols-2 gap-2.5">
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1 text-center">Original</p>
+                  <p className="text-[10px] font-medium text-muted-foreground mb-1 text-center">Original</p>
                   {originalImage && (
-                    <img
-                      src={originalImage.src}
-                      alt="Original"
-                      className="w-full aspect-square object-cover rounded border border-border"
-                    />
+                    <img src={originalImage.src} alt="Original" className="w-full aspect-square object-cover rounded-xl border" />
                   )}
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1 text-center">Processed</p>
-                  <div className="w-full aspect-square rounded border border-border overflow-hidden checkerboard-bg">
-                    <img
-                      src={processedImage.src}
-                      alt="Processed"
-                      className="w-full h-full object-contain"
-                    />
+                  <p className="text-[10px] font-medium text-muted-foreground mb-1 text-center">Processed</p>
+                  <div className="w-full aspect-square rounded-xl border overflow-hidden checkerboard-bg">
+                    <img src={processedImage.src} alt="Processed" className="w-full h-full object-contain" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Download Buttons */}
-            <div className="rounded-lg border border-tool-border bg-card p-4 space-y-3">
-              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">
-                Download Sticker
-              </p>
-              <button
-                onClick={() => downloadSticker("png")}
-                className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
-              >
+            <div className="rounded-2xl border bg-card p-4 space-y-2.5">
+              <p className="section-label mb-1">Download</p>
+              <button onClick={() => downloadSticker("png")} className="btn-primary w-full py-3">
                 Download PNG
               </button>
               <div className="flex gap-2">
-                <button
-                  onClick={() => downloadSticker("webp")}
-                  className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
-                >
-                  WebP
-                </button>
-                <button
-                  onClick={() => downloadSticker("jpeg")}
-                  className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
-                >
-                  JPEG
-                </button>
+                <button onClick={() => downloadSticker("webp")} className="btn-secondary flex-1">WebP</button>
+                <button onClick={() => downloadSticker("jpeg")} className="btn-secondary flex-1">JPEG</button>
               </div>
               <hr className="border-border" />
-              <button
-                onClick={downloadNoBorder}
-                className="w-full rounded-lg bg-muted px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/80"
-              >
-                Download Without Border (PNG)
-              </button>
-              <p className="text-xs text-muted-foreground text-center">
-                PNG preserves transparency
-              </p>
+              <button onClick={downloadNoBorder} className="btn-ghost w-full">Without Border (PNG)</button>
+              <p className="text-[10px] text-muted-foreground text-center">PNG preserves transparency</p>
             </div>
           </div>
         </div>

@@ -345,47 +345,52 @@ const BadgeEditor: React.FC = () => {
   };
 
   return (
-    <div className="bg-background">
-      {/* Badge size header */}
-      <div className="border-b border-border bg-card/50 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold text-foreground">
-          Button Badge Image Cutter{" "}
-          <span className="text-accent font-mono text-base">({badgeSize.outerMm} mm – {badgeSize.innerMm} mm)</span>
-        </h1>
-        {/* Size selector */}
+    <div className="bg-background min-h-[calc(100vh-3.5rem)]">
+      {/* Size bar */}
+      <div className="border-b bg-card/60 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-lg font-extrabold text-foreground tracking-tight">Badge Image Cutter</h1>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            <span className="font-mono font-medium">{badgeSize.outerMm}mm</span> outer · <span className="font-mono font-medium">{badgeSize.innerMm}mm</span> visible
+          </p>
+        </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Size</span>
-          {BADGE_SIZES.map((s, i) => (
-            <button
-              key={i}
-              onClick={() => setSizeIndex(i)}
-              className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${i === sizeIndex
-                ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background"
-                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground border border-border"
-                }`}
-            >
-              {s.label}
-            </button>
-          ))}
+          <span className="section-label">Size</span>
+          <div className="flex bg-muted rounded-lg p-0.5 gap-0.5">
+            {BADGE_SIZES.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => setSizeIndex(i)}
+                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${i === sizeIndex
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/60"
+                  }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* Left: Main canvas area */}
-          <div className="flex-1 w-full">
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-6">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
+          {/* Left: Canvas */}
+          <div className="flex-1 w-full space-y-4">
             {!imageState && (
               <div
-                className="mb-6 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-12 cursor-pointer transition-colors hover:border-primary hover:bg-muted/50"
+                className="group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border bg-card p-12 cursor-pointer transition-all duration-300 hover:border-primary/40 hover:bg-primary/[0.03] card-hover"
                 onDrop={handleDrop}
                 onDragOver={(e) => e.preventDefault()}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <svg className="mb-4 h-12 w-12 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                </svg>
-                <p className="text-sm font-medium text-foreground">Drop an image here or click to upload</p>
-                <p className="mt-1 text-xs text-muted-foreground">JPG, PNG supported</p>
+                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
+                  <svg className="h-7 w-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                </div>
+                <p className="text-sm font-semibold text-foreground">Drop an image or click to upload</p>
+                <p className="mt-1 text-xs text-muted-foreground">JPG, PNG</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -396,16 +401,15 @@ const BadgeEditor: React.FC = () => {
               </div>
             )}
 
-            {/* Canvas */}
-            <div className="rounded-lg border border-accent/20 bg-canvas p-4 flex flex-col items-center">
-              <p className="mb-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">
-                {badgeSize.outerMm} mm Artwork Canvas
+            <div className="rounded-2xl border bg-card p-4 flex flex-col items-center">
+              <p className="mb-3 section-label">
+                {badgeSize.outerMm}mm Canvas
               </p>
               <canvas
                 ref={canvasRef}
                 width={CANVAS_PX}
                 height={CANVAS_PX}
-                className="max-w-full rounded cursor-grab active:cursor-grabbing touch-none"
+                className="max-w-full rounded-xl cursor-grab active:cursor-grabbing touch-none ring-1 ring-border/50"
                 style={{ aspectRatio: "1/1", width: "100%", maxWidth: CANVAS_PX }}
                 onMouseDown={handlePointerDown}
                 onMouseMove={handlePointerMove}
@@ -420,67 +424,67 @@ const BadgeEditor: React.FC = () => {
               />
             </div>
 
-            {/* Controls */}
             {imageState && (
-              <div className="mt-4 rounded-lg border border-tool-border bg-card p-4 space-y-4">
+              <div className="rounded-2xl border bg-card p-4 space-y-4">
                 <div className="flex items-center gap-4">
-                  <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider w-16">Zoom</label>
-                  <input type="range" min="0.2" max="5" step="0.01" value={zoom} onChange={(e) => handleZoomChange(parseFloat(e.target.value))} className="flex-1 accent-primary" />
-                  <span className="text-xs font-mono text-foreground w-14 text-right">{(zoom * 100).toFixed(0)}%</span>
+                  <label className="input-label w-14">Zoom</label>
+                  <input type="range" min="0.2" max="5" step="0.01" value={zoom} onChange={(e) => handleZoomChange(parseFloat(e.target.value))} className="flex-1" />
+                  <span className="text-xs font-mono font-semibold text-foreground bg-muted px-2 py-1 rounded-md min-w-[48px] text-center">{(zoom * 100).toFixed(0)}%</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider w-16">Rotate</label>
-                  <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => handleRotationChange(parseInt(e.target.value))} className="flex-1 accent-primary" />
-                  <span className="text-xs font-mono text-foreground w-14 text-right">{rotation}°</span>
+                  <label className="input-label w-14">Rotate</label>
+                  <input type="range" min="-180" max="180" step="1" value={rotation} onChange={(e) => handleRotationChange(parseInt(e.target.value))} className="flex-1" />
+                  <span className="text-xs font-mono font-semibold text-foreground bg-muted px-2 py-1 rounded-md min-w-[48px] text-center">{rotation}°</span>
                 </div>
-                <div className="flex gap-2">
-                  <button className="rounded bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors" onClick={() => fileInputRef.current?.click()}>Replace Image</button>
-                  <button className="rounded bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors" onClick={() => { handleZoomChange(1); handleRotationChange(0); setImageState(prev => prev ? { ...prev, x: 0, y: 0 } : prev); }}>Reset Position</button>
+                <div className="flex gap-2 pt-1">
+                  <button className="btn-ghost" onClick={() => fileInputRef.current?.click()}>Replace Image</button>
+                  <button className="btn-ghost" onClick={() => { handleZoomChange(1); handleRotationChange(0); setImageState(prev => prev ? { ...prev, x: 0, y: 0 } : prev); }}>Reset</button>
                 </div>
                 <input ref={fileInputRef} type="file" accept="image/jpeg,image/png" className="hidden" onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])} />
               </div>
             )}
           </div>
 
-          {/* Right: Preview + Download */}
-          <div className="w-full lg:w-72 space-y-6">
-            <div className="rounded-lg border border-tool-border bg-card p-4 flex flex-col items-center">
-              <p className="mb-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">
-                Visible Badge Area ({badgeSize.innerMm} mm)
+          {/* Right: Preview + Actions */}
+          <div className="w-full lg:w-72 space-y-4">
+            <div className="rounded-2xl border bg-card p-4 flex flex-col items-center">
+              <p className="mb-3 section-label">Preview · {badgeSize.innerMm}mm</p>
+              <div className="p-2 rounded-full bg-muted/40">
+                <canvas ref={previewCanvasRef} width={200} height={200} className="rounded-full ring-1 ring-border/50" style={{ width: 200, height: 200 }} />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-card p-4 space-y-2.5">
+              <p className="section-label">Guide</p>
+              <div className="flex items-center gap-3">
+                <span className="inline-block h-0.5 w-5 rounded bg-primary" />
+                <span className="text-xs text-muted-foreground">{badgeSize.outerMm}mm — Cut line</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="inline-block h-0.5 w-5 border-t-2 border-dashed border-primary/50" />
+                <span className="text-xs text-muted-foreground">{badgeSize.innerMm}mm — Visible</span>
+              </div>
+            </div>
+
+            <div className="space-y-2.5">
+              <button onClick={generateDocx} disabled={!imageState} className="btn-primary w-full py-3">
+                Generate Word Report
+              </button>
+              <div className="flex gap-2 w-full">
+                <button onClick={downloadPreview} disabled={!imageState} className="btn-secondary flex-1 disabled:opacity-30 disabled:cursor-not-allowed">
+                  Preview
+                </button>
+                <button onClick={downloadTemplate} disabled={!imageState} className="btn-secondary flex-1 disabled:opacity-30 disabled:cursor-not-allowed">
+                  Template
+                </button>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center">
+                Exports as <span className="font-mono">button_badge_artwork.docx</span>
               </p>
-              <canvas ref={previewCanvasRef} width={200} height={200} className="rounded-full" style={{ width: 200, height: 200 }} />
             </div>
-
-            {/* Legend */}
-            <div className="rounded-lg border border-tool-border bg-card p-4 space-y-2">
-              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Guide</p>
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-0.5 w-6 bg-accent" />
-                <span className="text-xs text-foreground">{badgeSize.outerMm} mm – Cut boundary</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block h-0.5 w-6 border-t-2 border-dashed border-secondary" />
-                <span className="text-xs text-foreground">{badgeSize.innerMm} mm – Visible area</span>
-              </div>
-            </div>
-
-            <button onClick={generateDocx} disabled={!imageState} className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed">
-              Generate Word Report
-            </button>
-            <div className="flex gap-2 w-full">
-              <button onClick={downloadPreview} disabled={!imageState} className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed">
-                Download Preview
-              </button>
-              <button onClick={downloadTemplate} disabled={!imageState} className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed">
-                Download Template
-              </button>
-            </div>
-            <p className="text-xs text-muted-foreground text-center -mt-4">
-              Downloads as <span className="font-mono">button_badge_artwork.docx</span>
-            </p>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
