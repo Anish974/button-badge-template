@@ -1,0 +1,582 @@
+import React, { useRef, useState, useCallback, useEffect } from "react";
+import { removeBackground } from "@imgly/background-removal";
+
+type Step = "upload" | "processing" | "edit" | "download";
+
+const BORDER_MIN = 0;
+const BORDER_MAX = 40;
+const CANVAS_SIZE = 600;
+
+const StickerMaker: React.FC = () => {
+  const [step, setStep] = useState<Step>("upload");
+  const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
+  const [removedBgBlob, setRemovedBgBlob] = useState<Blob | null>(null);
+  const [processedImage, setProcessedImage] = useState<HTMLImageElement | null>(null);
+  const [borderWidth, setBorderWidth] = useState(8);
+  const [borderEnabled, setBorderEnabled] = useState(true);
+  const [borderColor, setBorderColor] = useState("#ffffff");
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle file selection
+  const handleFile = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    setError(null);
+    const img = new Image();
+    img.onload = () => {
+      setOriginalImage(img);
+      setOriginalFile(file);
+      setStep("processing");
+    };
+    img.src = URL.createObjectURL(file);
+  }, []);
+
+  // Drop handler
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    },
+    [handleFile]
+  );
+
+  // Remove background when step becomes "processing"
+  useEffect(() => {
+    if (step !== "processing" || !originalFile) return;
+    let cancelled = false;
+
+    const runRemoval = async () => {
+      try {
+        setProgress(0);
+        const blob = await removeBackground(originalFile, {
+          progress: (key: string, current: number, total: number) => {
+            if (!cancelled) {
+              const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+              setProgress(pct);
+            }
+          },
+        });
+        if (cancelled) return;
+        setRemovedBgBlob(blob);
+
+        const img = new Image();
+        img.onload = () => {
+          if (!cancelled) {
+            setProcessedImage(img);
+            setStep("edit");
+          }
+        };
+        img.src = URL.createObjectURL(blob);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Background removal failed:", err);
+          setError("Background removal failed. Please try again with a different image.");
+          setStep("upload");
+        }
+      }
+    };
+
+    runRemoval();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, originalFile]);
+
+  // Draw the sticker on canvas
+  const drawSticker = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !processedImage) return;
+
+    const ctx = canvas.getContext("2d")!;
+    const imgW = processedImage.width;
+    const imgH = processedImage.height;
+
+    // Calculate dimensions with border
+    const border = borderEnabled ? borderWidth : 0;
+    const totalW = imgW + border * 2;
+    const totalH = imgH + border * 2;
+
+    // Scale to fit canvas
+    const scale = Math.min(CANVAS_SIZE / totalW, CANVAS_SIZE / totalH);
+    const drawW = imgW * scale;
+    const drawH = imgH * scale;
+    const borderPx = border * scale;
+
+    canvas.width = CANVAS_SIZE;
+    canvas.height = CANVAS_SIZE;
+
+    // Clear with checkerboard
+    drawCheckerboard(ctx, CANVAS_SIZE, CANVAS_SIZE);
+
+    // Center
+    const ox = (CANVAS_SIZE - (drawW + borderPx * 2)) / 2;
+    const oy = (CANVAS_SIZE - (drawH + borderPx * 2)) / 2;
+
+    if (borderEnabled && borderWidth > 0) {
+      // Draw white border by painting the image outline
+      // We draw the image multiple times offset to create a stroke effect
+      ctx.save();
+      ctx.globalCompositeOperation = "source-over";
+
+      // Create an offscreen canvas for the border
+      const offscreen = document.createElement("canvas");
+      offscreen.width = CANVAS_SIZE;
+      offscreen.height = CANVAS_SIZE;
+      const octx = offscreen.getContext("2d")!;
+
+      // Draw the image at all border offsets to create a "dilated" shape
+      const steps = Math.max(16, borderPx * 2);
+      for (let i = 0; i < steps; i++) {
+        const angle = (i / steps) * Math.PI * 2;
+        const dx = Math.cos(angle) * borderPx;
+        const dy = Math.sin(angle) * borderPx;
+        octx.drawImage(
+          processedImage,
+          ox + borderPx + dx,
+          oy + borderPx + dy,
+          drawW,
+          drawH
+        );
+      }
+
+      // Now color the whole thing with border color
+      octx.globalCompositeOperation = "source-in";
+      octx.fillStyle = borderColor;
+      octx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
+
+      ctx.drawImage(offscreen, 0, 0);
+      ctx.restore();
+    }
+
+    // Draw the actual image on top
+    ctx.drawImage(processedImage, ox + (borderEnabled ? borderPx : 0), oy + (borderEnabled ? borderPx : 0), drawW, drawH);
+  }, [processedImage, borderWidth, borderEnabled, borderColor]);
+
+  useEffect(() => {
+    drawSticker();
+  }, [drawSticker]);
+
+  // Download sticker
+  const downloadSticker = useCallback(
+    async (format: "png" | "jpeg" | "webp") => {
+      const canvas = canvasRef.current;
+      if (!canvas || !processedImage) return;
+
+      // Create export canvas at full resolution
+      const border = borderEnabled ? borderWidth : 0;
+      const imgW = processedImage.width;
+      const imgH = processedImage.height;
+      const totalW = imgW + border * 2;
+      const totalH = imgH + border * 2;
+
+      const exportCanvas = document.createElement("canvas");
+      exportCanvas.width = totalW;
+      exportCanvas.height = totalH;
+      const ctx = exportCanvas.getContext("2d")!;
+
+      if (format === "jpeg") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, totalW, totalH);
+      }
+
+      if (borderEnabled && borderWidth > 0) {
+        const offscreen = document.createElement("canvas");
+        offscreen.width = totalW;
+        offscreen.height = totalH;
+        const octx = offscreen.getContext("2d")!;
+
+        const steps = Math.max(32, border * 4);
+        for (let i = 0; i < steps; i++) {
+          const angle = (i / steps) * Math.PI * 2;
+          const dx = Math.cos(angle) * border;
+          const dy = Math.sin(angle) * border;
+          octx.drawImage(processedImage, border + dx, border + dy, imgW, imgH);
+        }
+
+        octx.globalCompositeOperation = "source-in";
+        octx.fillStyle = borderColor;
+        octx.fillRect(0, 0, totalW, totalH);
+
+        ctx.drawImage(offscreen, 0, 0);
+      }
+
+      ctx.drawImage(processedImage, border, border, imgW, imgH);
+
+      const mimeType = format === "png" ? "image/png" : format === "jpeg" ? "image/jpeg" : "image/webp";
+      const ext = format;
+
+      exportCanvas.toBlob(
+        (blob) => {
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `sticker.${ext}`;
+          a.click();
+          URL.revokeObjectURL(url);
+        },
+        mimeType,
+        format === "jpeg" ? 0.95 : undefined
+      );
+    },
+    [processedImage, borderEnabled, borderWidth, borderColor]
+  );
+
+  // Download just the bg-removed image (no border)
+  const downloadNoBorder = useCallback(() => {
+    if (!removedBgBlob) return;
+    const url = URL.createObjectURL(removedBgBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sticker-no-border.png";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [removedBgBlob]);
+
+  const reset = () => {
+    setStep("upload");
+    setOriginalImage(null);
+    setOriginalFile(null);
+    setRemovedBgBlob(null);
+    setProcessedImage(null);
+    setBorderWidth(8);
+    setBorderEnabled(true);
+    setBorderColor("#ffffff");
+    setProgress(0);
+    setError(null);
+  };
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-foreground">Custom Sticker Maker</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Upload an image, remove the background with AI, add a border, and download your sticker.
+        </p>
+      </div>
+
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 mb-8">
+        {[
+          { key: "upload", label: "1. Upload" },
+          { key: "processing", label: "2. Remove BG" },
+          { key: "edit", label: "3. Edit" },
+          { key: "download", label: "4. Download" },
+        ].map((s, i) => {
+          const isActive = s.key === step;
+          const isDone =
+            (s.key === "upload" && step !== "upload") ||
+            (s.key === "processing" && (step === "edit" || step === "download")) ||
+            (s.key === "edit" && step === "download");
+          return (
+            <React.Fragment key={s.key}>
+              {i > 0 && (
+                <div
+                  className={`flex-1 h-0.5 ${
+                    isDone ? "bg-primary" : "bg-border"
+                  }`}
+                />
+              )}
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-md"
+                    : isDone
+                    ? "bg-primary/20 text-primary"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {isDone && (
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {s.label}
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </div>
+
+      {error && (
+        <div className="mb-6 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {/* STEP: Upload */}
+      {step === "upload" && (
+        <div
+          className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-card p-16 cursor-pointer transition-colors hover:border-primary hover:bg-muted/50"
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <svg
+            className="mb-4 h-16 w-16 text-muted-foreground"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"
+            />
+          </svg>
+          <p className="text-base font-semibold text-foreground">
+            Drop an image here or click to upload
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            JPG, PNG supported — AI will remove the background
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          />
+        </div>
+      )}
+
+      {/* STEP: Processing */}
+      {step === "processing" && (
+        <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-card p-16">
+          <div className="relative mb-6">
+            {originalImage && (
+              <img
+                src={originalImage.src}
+                alt="Original"
+                className="w-48 h-48 object-cover rounded-lg opacity-60"
+              />
+            )}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
+            </div>
+          </div>
+          <p className="text-base font-semibold text-foreground">Removing background...</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            This may take a moment — AI is processing your image locally
+          </p>
+          <div className="w-64 mt-4 bg-muted rounded-full h-2 overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${Math.max(progress, 5)}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 font-mono">{progress}%</p>
+        </div>
+      )}
+
+      {/* STEP: Edit */}
+      {(step === "edit" || step === "download") && processedImage && (
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          {/* Canvas Preview */}
+          <div className="flex-1 w-full">
+            <div className="rounded-lg border border-accent/20 bg-card p-4 flex flex-col items-center">
+              <p className="mb-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                Sticker Preview
+              </p>
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_SIZE}
+                height={CANVAS_SIZE}
+                className="max-w-full rounded"
+                style={{ aspectRatio: "1/1", width: "100%", maxWidth: CANVAS_SIZE }}
+              />
+            </div>
+
+            {/* Border Controls */}
+            <div className="mt-4 rounded-lg border border-tool-border bg-card p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
+                  White Border
+                </label>
+                <button
+                  onClick={() => setBorderEnabled(!borderEnabled)}
+                  className={`relative w-10 h-5 rounded-full transition-colors ${
+                    borderEnabled ? "bg-primary" : "bg-muted"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white transition-transform ${
+                      borderEnabled ? "translate-x-5" : ""
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {borderEnabled && (
+                <>
+                  <div className="flex items-center gap-4">
+                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider w-20">
+                      Thickness
+                    </label>
+                    <input
+                      type="range"
+                      min={BORDER_MIN}
+                      max={BORDER_MAX}
+                      step={1}
+                      value={borderWidth}
+                      onChange={(e) => setBorderWidth(parseInt(e.target.value))}
+                      className="flex-1 accent-primary"
+                    />
+                    <span className="text-xs font-mono text-foreground w-12 text-right">
+                      {borderWidth}px
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider w-20">
+                      Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      {["#ffffff", "#000000", "#ff0000", "#00ff00", "#0000ff", "#ffff00"].map(
+                        (color) => (
+                          <button
+                            key={color}
+                            onClick={() => setBorderColor(color)}
+                            className={`w-7 h-7 rounded-full border-2 transition-all ${
+                              borderColor === color
+                                ? "border-primary scale-110 ring-2 ring-primary/30"
+                                : "border-border hover:border-muted-foreground"
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        )
+                      )}
+                      <input
+                        type="color"
+                        value={borderColor}
+                        onChange={(e) => setBorderColor(e.target.value)}
+                        className="w-7 h-7 rounded cursor-pointer border border-border"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={reset}
+                className="rounded bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                Start Over
+              </button>
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded bg-secondary px-3 py-1.5 text-xs font-medium text-secondary-foreground hover:bg-secondary/80 transition-colors"
+              >
+                Try Another Image
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    reset();
+                    setTimeout(() => handleFile(e.target.files![0]), 50);
+                  }
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Right: Download panel */}
+          <div className="w-full lg:w-72 space-y-4">
+            {/* Original vs Processed */}
+            <div className="rounded-lg border border-tool-border bg-card p-4">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">
+                Before & After
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1 text-center">Original</p>
+                  {originalImage && (
+                    <img
+                      src={originalImage.src}
+                      alt="Original"
+                      className="w-full aspect-square object-cover rounded border border-border"
+                    />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1 text-center">Processed</p>
+                  <div className="w-full aspect-square rounded border border-border overflow-hidden checkerboard-bg">
+                    <img
+                      src={processedImage.src}
+                      alt="Processed"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Download Buttons */}
+            <div className="rounded-lg border border-tool-border bg-card p-4 space-y-3">
+              <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-1">
+                Download Sticker
+              </p>
+              <button
+                onClick={() => downloadSticker("png")}
+                className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Download PNG
+              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => downloadSticker("webp")}
+                  className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
+                >
+                  WebP
+                </button>
+                <button
+                  onClick={() => downloadSticker("jpeg")}
+                  className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80"
+                >
+                  JPEG
+                </button>
+              </div>
+              <hr className="border-border" />
+              <button
+                onClick={downloadNoBorder}
+                className="w-full rounded-lg bg-muted px-4 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/80"
+              >
+                Download Without Border (PNG)
+              </button>
+              <p className="text-xs text-muted-foreground text-center">
+                PNG preserves transparency
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+/** Draw a checkerboard pattern for transparency indication */
+function drawCheckerboard(ctx: CanvasRenderingContext2D, w: number, h: number) {
+  const size = 12;
+  for (let y = 0; y < h; y += size) {
+    for (let x = 0; x < w; x += size) {
+      ctx.fillStyle =
+        (Math.floor(x / size) + Math.floor(y / size)) % 2 === 0
+          ? "#2a2a2a"
+          : "#1a1a1a";
+      ctx.fillRect(x, y, size, size);
+    }
+  }
+}
+
+export default StickerMaker;

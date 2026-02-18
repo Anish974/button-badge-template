@@ -50,7 +50,7 @@ const BadgeEditor: React.FC = () => {
     const cy = CANVAS_PX / 2;
 
     ctx.clearRect(0, 0, CANVAS_PX, CANVAS_PX);
-    ctx.fillStyle = "hsl(210, 14%, 91%)";
+    ctx.fillStyle = "hsl(0, 0%, 12%)"; // Dark canvas background
     ctx.fillRect(0, 0, CANVAS_PX, CANVAS_PX);
 
     // Clip to outer circle and draw image
@@ -74,7 +74,7 @@ const BadgeEditor: React.FC = () => {
     // Outer circle (solid black)
     ctx.beginPath();
     ctx.arc(cx, cy, OUTER_PX / 2, 0, Math.PI * 2);
-    ctx.strokeStyle = "#000000";
+    ctx.strokeStyle = "hsl(43, 74%, 49%)"; // Golden outer cut line
     ctx.lineWidth = 2;
     ctx.stroke();
 
@@ -82,7 +82,7 @@ const BadgeEditor: React.FC = () => {
     ctx.beginPath();
     ctx.arc(cx, cy, INNER_PX / 2, 0, Math.PI * 2);
     ctx.setLineDash([6, 4]);
-    ctx.strokeStyle = "hsl(145, 55%, 42%)";
+    ctx.strokeStyle = "hsl(48, 100%, 50%)"; // Chrome Yellow guide
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.setLineDash([]);
@@ -112,11 +112,7 @@ const BadgeEditor: React.FC = () => {
       }
       pCtx.restore();
 
-      pCtx.beginPath();
-      pCtx.arc(pSize / 2, pSize / 2, pSize / 2 - 1, 0, Math.PI * 2);
-      pCtx.strokeStyle = "hsl(145, 55%, 42%)";
-      pCtx.lineWidth = 2;
-      pCtx.stroke();
+
     }
   }, [imageState, OUTER_PX, INNER_PX]);
 
@@ -228,6 +224,13 @@ const BadgeEditor: React.FC = () => {
         ctx.drawImage(imageState.img, -imageState.img.width / 2, -imageState.img.height / 2);
         ctx.restore();
       }
+
+      // Draw outer cut line
+      ctx.beginPath();
+      ctx.arc(cx, cx, OUTER_PX / 2, 0, Math.PI * 2);
+      ctx.strokeStyle = "#000000"; // Black cut line for visibility
+      ctx.lineWidth = 2;
+      ctx.stroke();
       offCanvas.toBlob((blob) => resolve(blob!), "image/png");
     });
   };
@@ -329,13 +332,25 @@ const BadgeEditor: React.FC = () => {
     saveAs(blob, "button_badge_artwork.docx");
   };
 
+  const downloadPreview = async () => {
+    const { saveAs } = await import("file-saver");
+    const blob = await getInnerCircleBlob();
+    saveAs(blob, `button_badge_preview_${badgeSize.innerMm}mm.png`);
+  };
+
+  const downloadTemplate = async () => {
+    const { saveAs } = await import("file-saver");
+    const blob = await getFullCircleBlob();
+    saveAs(blob, `button_badge_template_${badgeSize.outerMm}mm.png`);
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between flex-wrap gap-3">
+    <div className="bg-background">
+      {/* Badge size header */}
+      <div className="border-b border-border bg-card/50 px-6 py-3 flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-xl font-semibold text-foreground">
           Button Badge Image Cutter{" "}
-          <span className="text-muted-foreground font-mono text-base">({badgeSize.outerMm} mm – {badgeSize.innerMm} mm)</span>
+          <span className="text-accent font-mono text-base">({badgeSize.outerMm} mm – {badgeSize.innerMm} mm)</span>
         </h1>
         {/* Size selector */}
         <div className="flex items-center gap-2">
@@ -344,17 +359,16 @@ const BadgeEditor: React.FC = () => {
             <button
               key={i}
               onClick={() => setSizeIndex(i)}
-              className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${
-                i === sizeIndex
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
+              className={`rounded px-3 py-1.5 text-xs font-medium transition-colors ${i === sizeIndex
+                ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2 ring-offset-background"
+                : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground border border-border"
+                }`}
             >
               {s.label}
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -383,7 +397,7 @@ const BadgeEditor: React.FC = () => {
             )}
 
             {/* Canvas */}
-            <div className="rounded-lg border border-tool-border bg-canvas p-4 flex flex-col items-center">
+            <div className="rounded-lg border border-accent/20 bg-canvas p-4 flex flex-col items-center">
               <p className="mb-3 text-xs font-mono text-muted-foreground uppercase tracking-wider">
                 {badgeSize.outerMm} mm Artwork Canvas
               </p>
@@ -441,11 +455,11 @@ const BadgeEditor: React.FC = () => {
             <div className="rounded-lg border border-tool-border bg-card p-4 space-y-2">
               <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider mb-3">Guide</p>
               <div className="flex items-center gap-2">
-                <span className="inline-block h-0.5 w-6 bg-foreground" />
+                <span className="inline-block h-0.5 w-6 bg-accent" />
                 <span className="text-xs text-foreground">{badgeSize.outerMm} mm – Cut boundary</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="inline-block h-0.5 w-6 border-t-2 border-dashed border-accent" />
+                <span className="inline-block h-0.5 w-6 border-t-2 border-dashed border-secondary" />
                 <span className="text-xs text-foreground">{badgeSize.innerMm} mm – Visible area</span>
               </div>
             </div>
@@ -453,6 +467,14 @@ const BadgeEditor: React.FC = () => {
             <button onClick={generateDocx} disabled={!imageState} className="w-full rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed">
               Generate Word Report
             </button>
+            <div className="flex gap-2 w-full">
+              <button onClick={downloadPreview} disabled={!imageState} className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed">
+                Download Preview
+              </button>
+              <button onClick={downloadTemplate} disabled={!imageState} className="flex-1 rounded-lg bg-secondary px-4 py-2 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary/80 disabled:opacity-40 disabled:cursor-not-allowed">
+                Download Template
+              </button>
+            </div>
             <p className="text-xs text-muted-foreground text-center -mt-4">
               Downloads as <span className="font-mono">button_badge_artwork.docx</span>
             </p>

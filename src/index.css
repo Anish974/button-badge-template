@@ -6,83 +6,83 @@
 
 @layer base {
   :root {
-    --background: 210 20% 96%;
-    --foreground: 220 20% 14%;
+    --background: 0 0% 5%; /* Close to Black */
+    --foreground: 0 0% 100%; /* White */
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 14%;
+    --card: 0 0% 8%; /* Dark Gray */
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 14%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 220 65% 46%;
+    --primary: 348 83% 47%; /* Red */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 14% 89%;
-    --secondary-foreground: 220 20% 14%;
+    --secondary: 48 100% 50%; /* Chrome Yellow */
+    --secondary-foreground: 0 0% 0%;
 
-    --muted: 210 14% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
 
-    --accent: 145 55% 42%;
+    --accent: 43 74% 49%; /* Golden */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 18% 82%;
-    --input: 214 18% 82%;
-    --ring: 220 65% 46%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 348 83% 47%;
 
     --radius: 0.5rem;
 
-    --canvas-bg: 210 14% 91%;
-    --guide-green: 145 55% 42%;
-    --tool-surface: 0 0% 100%;
-    --tool-border: 214 18% 78%;
+    --canvas-bg: 0 0% 12%;
+    --guide-green: 145 55% 42%; /* Keeping guide green distinct for utility */
+    --tool-surface: 0 0% 8%;
+    --tool-border: 0 0% 20%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 348 83% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 43 74% 49%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 348 83% 47%;
   }
 
   .dark {
-    --background: 220 20% 10%;
-    --foreground: 210 20% 92%;
-    --card: 220 18% 14%;
-    --card-foreground: 210 20% 92%;
-    --popover: 220 18% 14%;
-    --popover-foreground: 210 20% 92%;
-    --primary: 220 65% 56%;
+    --background: 0 0% 5%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 348 83% 47%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 20%;
-    --secondary-foreground: 210 20% 92%;
-    --muted: 220 14% 18%;
-    --muted-foreground: 215 14% 60%;
-    --accent: 145 55% 42%;
+    --secondary: 48 100% 50%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 43 74% 49%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 14% 22%;
-    --input: 220 14% 22%;
-    --ring: 220 65% 56%;
-    --canvas-bg: 220 14% 16%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 348 83% 47%;
+    --canvas-bg: 0 0% 12%;
     --guide-green: 145 55% 48%;
-    --tool-surface: 220 18% 14%;
-    --tool-border: 220 14% 24%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --tool-surface: 0 0% 8%;
+    --tool-border: 0 0% 20%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 348 83% 47%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 43 74% 49%;
+    --sidebar-accent-foreground: 0 0% 0%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-ring: 348 83% 47%;
   }
 }
 
@@ -104,4 +104,16 @@
   code, pre, .font-mono {
     font-family: 'IBM Plex Mono', monospace;
   }
+}
+
+/* Checkerboard transparency pattern */
+.checkerboard-bg {
+  background-image:
+    linear-gradient(45deg, #2a2a2a 25%, transparent 25%),
+    linear-gradient(-45deg, #2a2a2a 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #2a2a2a 75%),
+    linear-gradient(-45deg, transparent 75%, #2a2a2a 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-color: #1a1a1a;
 }
